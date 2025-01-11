@@ -6,6 +6,8 @@ import postcssSelectorParser from 'postcss-selector-parser';
 import * as parser from '@babel/parser';
 import traverse from '@babel/traverse';
 
+const DEFAULT_PATH = 'src/**/*.scss';
+
 const supportedLanguages = new Set([
 	'html',
 	'javascript',
@@ -20,6 +22,7 @@ const CLASSNAME_IDENTIFIER_KEY = /^(.+?)(-+)/;
 const fileClassCache: Map<vscode.Uri, Set<string>> = new Map();
 const globalClassSet: Set<string> = new Set();
 const globalVariantMap: Map<string, Set<vscode.CompletionItem>> = new Map();
+
 const getVariantKey = (variant: string) => {
 	const [_, formattedKey] = CLASSNAME_IDENTIFIER_KEY.exec(variant) ?? [
 		undefined,
@@ -99,25 +102,37 @@ function handleFileDelete(
 }
 
 
-/** * Sets up a file watcher to monitor changes to relevant files. */ function watchForChanges() {
-	const watcher = vscode.workspace.createFileSystemWatcher('**/*.scss'); // Adjust glob as needed
+/** * Sets up a file watcher to monitor changes to relevant files. */
+function watchForChanges() {
+	const customPath = vscode.workspace.getConfiguration('twassy').get<string>('sassPath') ?? DEFAULT_PATH;
+
+	const watcher = vscode.workspace.createFileSystemWatcher(customPath);
+
 	watcher.onDidChange(async (uri) => {
 		updateCache(uri);
 	});
+
 	watcher.onDidCreate(async (uri) => {
 		updateCache(uri);
 	});
+
 	watcher.onDidDelete((uri) => {
 		handleFileDelete(uri);
 	});
+
 	return watcher;
 }
 
 
-/** * Rescans the workspace for initial load of classes. */ async function initializeCache() {
-	const files = await vscode.workspace.findFiles('**/*.scss');
-	for (const file of files) {
-		updateCache(file);
+/** * Rescans the workspace for initial load of classes. */
+async function initializeCache() {
+	const customPath = vscode.workspace.getConfiguration('twassy').get<string>('sassPath');
+
+	if (customPath) {
+		const files = await vscode.workspace.findFiles(customPath);
+		for (const file of files) {
+			updateCache(file);
+		}
 	}
 }
 
@@ -238,7 +253,6 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(documentChanges);
 }
 
-// This method is called when your extension is deactivated
 export function deactivate() {
 	fileClassCache.clear();
 	globalClassSet.clear();

@@ -3,13 +3,25 @@
   "displayName": "Twassy",
   "description": "",
   "version": "0.0.1",
+  "publisher": "twassy",
   "engines": {
     "vscode": "^1.96.0"
   },
-  "publisher": "twassy",
   "categories": [
     "Other"
   ],
+  "contributes": {
+    "configuration": {
+      "type": "object",
+      "properties": {
+        "twassy.sassPath": {
+          "type": "string",
+          "default": "/src/**/*.scscc",
+          "description": "The custom sass path to your files."
+        }
+      }
+    }
+  },
   "activationEvents": [
     "onLanguage:typescript",
     "onLanguage:javascript",
